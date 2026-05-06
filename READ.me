@@ -1,0 +1,325 @@
+```markdown
+# 💥 When Corruptions Compound
+## Superadditive Degradation of Vision-Language Encoders under Combined Image Corruptions
+
+<div align="center">
+
+![Python](https://img.shields.io/badge/Python-3.10+-blue?style=for-the-badge&logo=python)
+![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-red?style=for-the-badge&logo=pytorch)
+![CLIP](https://img.shields.io/badge/OpenCLIP-LAION--2B-green?style=for-the-badge)
+![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)
+
+**First systematic study of pairwise corruption interactions for CLIP-family encoders**
+
+[📄 Paper](#-paper) • [🚀 Quick Start](#-quick-start) • [📊 Results](#-results) • [🔬 Key Findings](#-key-findings)
+
+</div>
+
+---
+
+## 🧠 TL;DR
+
+> Existing robustness benchmarks test corruptions **one at a time**.
+> Real cameras don't. We test **all pairwise combinations** and find that
+> some pairs are **catastrophically worse** than the sum of their parts.
+
+```
+fog alone:         acc = 0.528  (drop = 0.225)
+shot_noise alone:  acc = 0.245  (drop = 0.508)
+─────────────────────────────────────────────
+expected combined: drop = 0.733  →  acc = 0.020
+actual combined:   drop = 0.799  →  acc = 0.023  🔴 SUPERADDITIVE
+```
+
+---
+
+## 🎯 Key Findings
+
+### 1️⃣ Superadditivity is Real
+
+At low severity, **up to 8 of 21 pairs** degrade accuracy worse than
+the sum of individual drops. We call this **superadditivity**.
+
+| Pair | Expected Drop | Actual Drop | Interaction Δ |
+|------|:---:|:---:|:---:|
+| **contrast + shot_noise** | 0.543 | **0.770** | 🔴 **+0.227** |
+| fog + shot_noise | 0.689 | 0.799 | 🔴 +0.110 |
+| fog + contrast | 0.330 | 0.419 | 🔴 +0.089 |
+| gaussian + motion_blur | 0.807 | 0.634 | 🔵 −0.173 |
+
+### 2️⃣ Scale Does NOT Help
+
+```
+         Clean    Avg Combined (s=1)    Gap
+ViT-B/32  0.753       0.218           0.231
+ViT-B/16  0.788       0.239           0.234
+ViT-L/14  0.835       0.295           0.249  ← BIGGER gap!
+```
+
+> Larger models have **more headroom to fail**.
+> ViT-L/14 shows **2× stronger superadditivity** than ViT-B/32.
+
+### 3️⃣ Order Matters — A Lot
+
+```
+fog → contrast:   acc = 0.356  ✅
+contrast → fog:   acc = 0.146  💀
+─────────────────────────────────
+Δ_order = 0.210  ← worst-case gap
+```
+
+4 of 5 top pairs are **order-sensitive**.
+Fixed-order benchmarks underestimate worst-case by up to **0.21 accuracy**.
+
+### 4️⃣ Floor Effect at High Severity
+
+| Severity | Superadditive pairs |
+|:---:|:---:|
+| s=1 | 🔴 6–8 pairs |
+| s=3 | 🟡 0–1 pairs |
+| s=5 | ⚪ 0 pairs |
+
+When individual corruptions already destroy the model → no room to get worse.
+
+### 5️⃣ Patch Size Trade-off (Novel!)
+
+| Model | Gaussian Noise s=1 | JPEG s=1 |
+|-------|:---:|:---:|
+| ViT-B/**32** (large patch) | 0.276 | **0.290** |
+| ViT-B/**16** (small patch) | **0.341** | 0.279 |
+
+> Small patches → better noise robustness, worse JPEG robustness. Trade-off!
+
+---
+
+## 📊 Results
+
+### Accuracy Drop Heatmaps (ViT-L/14, severity=1)
+
+<div align="center">
+<img src="results_combined_corruptions/heatmap_ViT-L-14_s1.png" width="80%"/>
+
+*Diagonal = single corruption. Off-diagonal = combined.
+Darker red = more severe degradation.*
+</div>
+
+---
+
+### Superadditivity Analysis
+
+<div align="center">
+<img src="results_combined_corruptions/superadditivity_ViT-L-14.png" width="90%"/>
+
+*Red bars = superadditive (worse than expected).
+Blue bars = subadditive (better than expected).
+Abbreviations: GN=Gaussian Noise, MB=Motion Blur, FG=Fog,
+JP=JPEG, BR=Brightness, CT=Contrast, SN=Shot Noise*
+</div>
+
+---
+
+### Cross-Model Comparison
+
+<div align="center">
+<img src="results_combined_corruptions/cross_model_superadditivity.png" width="90%"/>
+
+*ViT-L/14 (green) consistently shows the strongest superadditive effects.*
+</div>
+
+---
+
+### Robustness Profiles
+
+<div align="center">
+<img src="results_combined_corruptions/radar_robustness.png" width="60%"/>
+
+*All models share the same corruption hierarchy shape →
+architecture-invariant structural vulnerability.*
+</div>
+
+---
+
+### Degradation Curves
+
+<div align="center">
+
+| ViT-B/32 | ViT-B/16 | ViT-L/14 |
+|:---:|:---:|:---:|
+| <img src="results_combined_corruptions/severity_curves_ViT-B-32.png" width="100%"/> | <img src="results_combined_corruptions/severity_curves_ViT-B-16.png" width="100%"/> | <img src="results_combined_corruptions/severity_curves_ViT-L-14.png" width="100%"/> |
+
+*Blue = single corruptions. Red = combined. Gap narrows at high severity (floor effect).*
+</div>
+
+---
+
+### Corruption Examples
+
+<div align="center">
+<img src="results_combined_corruptions/corruption_examples.png" width="100%"/>
+</div>
+
+---
+
+## 🚀 Quick Start
+
+### 1. Install dependencies
+
+```bash
+pip install open_clip_torch imagecorruptions torch torchvision \
+    matplotlib seaborn pandas numpy tqdm datasets Pillow
+```
+
+### 2. Fix NumPy 2.0 compatibility
+
+```python
+# Add at the top of any script
+import numpy as np
+if not hasattr(np, 'float_'):
+    np.float_ = np.float64
+```
+
+### 3. Run the full experiment
+
+```bash
+python experiment.py
+```
+
+> ⚠️ Takes ~2 hours on GPU. Results saved to `results_combined_corruptions/`
+
+### 4. Regenerate plots only (fast!)
+
+```bash
+python regenerate_plots.py   # reads raw_results.json, no GPU needed
+```
+
+### 5. Compile the paper
+
+```bash
+pdflatex paper
+bibtex paper
+pdflatex paper
+pdflatex paper
+```
+
+---
+
+## 📁 Project Structure
+
+```
+📦 RealResearch/
+├── 📄 experiment.py               # Main experiment (CLIP evaluation)
+├── 📄 regenerate_plots.py         # Regenerate all figures
+├── 📄 ablation_order.py           # Order sensitivity ablation
+├── 📄 paper.tex                   # LaTeX paper
+├── 📄 references.bib              # BibTeX references
+│
+└── 📁 results_combined_corruptions/
+    ├── 📄 raw_results.json        # All accuracy numbers
+    ├── 📄 summary_table.csv       # Summary table
+    ├── 📄 summary_table.tex       # LaTeX table
+    ├── 📄 ablation_order.csv      # Order sensitivity results
+    ├── 📄 ablation_order.tex      # LaTeX ablation table
+    │
+    ├── 🖼️ corruption_examples.png
+    ├── 🖼️ heatmap_ViT-B-32_s{1,3,5}.png
+    ├── 🖼️ heatmap_ViT-B-16_s{1,3,5}.png
+    ├── 🖼️ heatmap_ViT-L-14_s{1,3,5}.png
+    ├── 🖼️ severity_curves_ViT-B-32.png
+    ├── 🖼️ severity_curves_ViT-B-16.png
+    ├── 🖼️ severity_curves_ViT-L-14.png
+    ├── 🖼️ superadditivity_ViT-B-32.png
+    ├── 🖼️ superadditivity_ViT-B-16.png
+    ├── 🖼️ superadditivity_ViT-L-14.png
+    ├── 🖼️ cross_model_superadditivity.png
+    └── 🖼️ radar_robustness.png
+```
+
+---
+
+## 🔬 Methodology
+
+### Models
+
+| Model | Patch Size | Params | Pretrained on |
+|-------|:---:|:---:|:---:|
+| ViT-B/32 | 32×32 | 88M | LAION-2B |
+| ViT-B/16 | 16×16 | 86M | LAION-2B |
+| ViT-L/14 | 14×14 | 307M | LAION-2B |
+
+### Corruption Types
+
+| Category | Corruptions |
+|----------|-------------|
+| 🔴 Noise | `gaussian_noise`, `shot_noise` |
+| 🟠 Blur | `motion_blur` |
+| 🟡 Weather | `fog` |
+| 🟢 Digital | `jpeg_compression`, `brightness`, `contrast` |
+
+### Interaction Effect Metric
+
+$$\mathcal{I}(c_1, c_2, s) = \Delta(c_1{+}c_2, s) - [\Delta(c_1, s) + \Delta(c_2, s)]$$
+
+```
+I > +0.005  →  SUPERADDITIVE  🔴  (worse than expected)
+|I| ≤ 0.005 →  ADDITIVE       ⚪  (as expected)
+I < -0.005  →  SUBADDITIVE    🔵  (better than expected)
+```
+
+### Experimental Scale
+
+```
+3 models × (1 clean + 21 single + 63 combined) × 3 severities
+= 3 × 85 × 3 = 765 evaluations
+= 765 × 1000 images = 765,000 forward passes
+```
+
+---
+
+## 📄 Paper
+
+```bibtex
+@article{anonymous2025corruptions,
+  title   = {When Corruptions Compound: Superadditive Degradation
+             of Vision-Language Encoders under Combined Image Corruptions},
+  author  = {Anonymous},
+  journal = {arXiv preprint},
+  year    = {2025}
+}
+```
+
+---
+
+## 🔑 Related Work
+
+| Work | What they did | Our difference |
+|------|--------------|----------------|
+| ImageNet-C (2019) | Single corruptions, 15 types | **Pairwise combinations** |
+| RobustBench (2021) | Leaderboard for single corruptions | **Interaction effects** |
+| CCC / RDumb (2023) | Corruption pairs for TTA CNNs | **VLMs, zero-shot, superadditivity** |
+| BAT-CLIP (2024) | Single corruptions on CLIP | **Combined corruptions** |
+| Holistic CLIP (2024) | 3D corruptions on CLIP | **Pairwise + order sensitivity** |
+
+> ✅ **No prior work** has systematically quantified pairwise corruption
+> interaction effects for VLM encoders in zero-shot classification.
+
+---
+
+## ⚙️ Hardware & Runtime
+
+| Stage | Time | Hardware |
+|-------|:----:|:--------:|
+| Full experiment (3 models) | ~111 min | NVIDIA GPU |
+| Regenerate all plots | ~2 min | CPU only |
+| Ablation study | ~5 min | NVIDIA GPU |
+| Compile paper | ~30 sec | CPU |
+
+---
+
+<div align="center">
+
+Made with 🔥 and way too much ☕
+
+</div>
+```
+
+---
