@@ -7,11 +7,11 @@
 ![Python](https://img.shields.io/badge/Python-3.10+-blue?style=for-the-badge&logo=python)
 ![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-red?style=for-the-badge&logo=pytorch)
 ![CLIP](https://img.shields.io/badge/OpenCLIP-LAION--2B-green?style=for-the-badge)
-![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)
+![Jupyter](https://img.shields.io/badge/Jupyter-Notebook-orange?style=for-the-badge&logo=jupyter)
 
 **First systematic study of pairwise corruption interactions for CLIP-family encoders**
 
-[📄 Paper](#-paper) • [🚀 Quick Start](#-quick-start) • [📊 Results](#-results) • [🔬 Key Findings](#-key-findings)
+[🧠 Key Findings](#-key-findings) • [🚀 Quick Start](#-quick-start) • [📊 Results](#-results) • [📄 Paper](#-paper)
 
 </div>
 
@@ -27,8 +27,8 @@
 fog alone:         acc = 0.528  (drop = 0.225)
 shot_noise alone:  acc = 0.245  (drop = 0.508)
 ─────────────────────────────────────────────
-expected combined: drop = 0.733  →  acc = 0.020
-actual combined:   drop = 0.799  →  acc = 0.023  🔴 SUPERADDITIVE
+expected combined: drop = 0.733  →  acc ≈ 0.020
+actual combined:   drop = 0.799  →  acc = 0.023  🔴 SUPERADDITIVE (+0.110)
 ```
 
 ---
@@ -38,14 +38,14 @@ actual combined:   drop = 0.799  →  acc = 0.023  🔴 SUPERADDITIVE
 ### 1️⃣ Superadditivity is Real
 
 At low severity, **up to 8 of 21 pairs** degrade accuracy worse than
-the sum of individual drops. We call this **superadditivity**.
+the sum of individual drops.
 
 | Pair | Expected Drop | Actual Drop | Interaction Δ |
 |------|:---:|:---:|:---:|
-| **contrast + shot_noise** | 0.543 | **0.770** | 🔴 **+0.227** |
-| fog + shot_noise | 0.689 | 0.799 | 🔴 +0.110 |
+| **contrast + shot\_noise** | 0.543 | **0.770** | 🔴 **+0.227** |
+| fog + shot\_noise | 0.689 | 0.799 | 🔴 +0.110 |
 | fog + contrast | 0.330 | 0.419 | 🔴 +0.089 |
-| gaussian + motion_blur | 0.807 | 0.634 | 🔵 −0.173 |
+| gaussian + motion\_blur | 0.807 | 0.634 | 🔵 −0.173 |
 
 ### 2️⃣ Scale Does NOT Help
 
@@ -79,22 +79,20 @@ Fixed-order benchmarks underestimate worst-case by up to **0.21 accuracy**.
 | s=3 | 🟡 0–1 pairs |
 | s=5 | ⚪ 0 pairs |
 
-When individual corruptions already destroy the model → no room to get worse.
-
-### 5️⃣ Patch Size Trade-off (Novel!)
+### 5️⃣ Patch Size Trade-off
 
 | Model | Gaussian Noise s=1 | JPEG s=1 |
 |-------|:---:|:---:|
 | ViT-B/**32** (large patch) | 0.276 | **0.290** |
 | ViT-B/**16** (small patch) | **0.341** | 0.279 |
 
-> Small patches → better noise robustness, worse JPEG robustness. Trade-off!
+> Small patches → better noise robustness, worse JPEG robustness.
 
 ---
 
 ## 📊 Results
 
-### Accuracy Drop Heatmaps (ViT-L/14, severity=1)
+### Accuracy Drop Heatmap (ViT-L/14, severity=1)
 
 <div align="center">
 <img src="results_combined_corruptions/heatmap_ViT-L-14_s1.png" width="80%"/>
@@ -110,9 +108,8 @@ Darker red = more severe degradation.*
 <div align="center">
 <img src="results_combined_corruptions/superadditivity_ViT-L-14.png" width="90%"/>
 
-*Red bars = superadditive (worse than expected).
-Blue bars = subadditive (better than expected).
-Abbreviations: GN=Gaussian Noise, MB=Motion Blur, FG=Fog,
+*Red = superadditive (Δ > 0). Blue = subadditive (Δ < 0).*
+*GN=Gaussian Noise, MB=Motion Blur, FG=Fog,
 JP=JPEG, BR=Brightness, CT=Contrast, SN=Shot Noise*
 </div>
 
@@ -131,9 +128,9 @@ JP=JPEG, BR=Brightness, CT=Contrast, SN=Shot Noise*
 ### Robustness Profiles
 
 <div align="center">
-<img src="results_combined_corruptions/radar_robustness.png" width="60%"/>
+<img src="results_combined_corruptions/radar_robustness.png" width="55%"/>
 
-*All models share the same corruption hierarchy shape →
+*All models share the same corruption hierarchy →
 architecture-invariant structural vulnerability.*
 </div>
 
@@ -147,7 +144,7 @@ architecture-invariant structural vulnerability.*
 |:---:|:---:|:---:|
 | <img src="results_combined_corruptions/severity_curves_ViT-B-32.png" width="100%"/> | <img src="results_combined_corruptions/severity_curves_ViT-B-16.png" width="100%"/> | <img src="results_combined_corruptions/severity_curves_ViT-L-14.png" width="100%"/> |
 
-*Blue = single corruptions. Red = combined. Gap narrows at high severity (floor effect).*
+*Blue = single. Red = combined. Gap narrows at high severity (floor effect).*
 </div>
 
 ---
@@ -162,37 +159,108 @@ architecture-invariant structural vulnerability.*
 
 ## 🚀 Quick Start
 
-### 1. Install dependencies
+### Всё в одном ноутбуке!
+
+```
+📄 Research_Kudinov_ruslan.ipynb
+```
+
+Просто открой ноутбук и запускай ячейки по порядку.
+
+### Структура ноутбука:
+
+| # | Блок | Время |
+|---|------|:-----:|
+| 1 | Установка зависимостей | ~2 мин |
+| 2 | Патчи NumPy 2.0 | мгновенно |
+| 3 | Загрузка данных (CIFAR-100) | ~1 мин |
+| 4 | Загрузка моделей (3× OpenCLIP) | ~5 мин |
+| 5 | **Основной эксперимент** | ~111 мин |
+| 6 | Анализ и визуализация | ~2 мин |
+| 7 | Ablation: order sensitivity | ~5 мин |
+| 8 | Перегенерация графиков | ~2 мин |
+
+### Установка зависимостей:
 
 ```bash
 pip install open_clip_torch imagecorruptions torch torchvision \
     matplotlib seaborn pandas numpy tqdm datasets Pillow
 ```
 
-### 2. Fix NumPy 2.0 compatibility
+### Важный патч (первая ячейка ноутбука):
 
 ```python
-# Add at the top of any script
 import numpy as np
-if not hasattr(np, 'float_'):
-    np.float_ = np.float64
+if not hasattr(np, 'float_'):    np.float_ = np.float64
+if not hasattr(np, 'int_'):      np.int_ = np.int64
+if not hasattr(np, 'complex_'):  np.complex_ = np.complex128
 ```
 
-### 3. Run the full experiment
+> ⚠️ **GPU рекомендуется.** Без GPU эксперимент займёт значительно дольше.
 
-```bash
-python experiment.py
+---
+
+## 📁 Структура проекта
+
+```
+📦 RealResearch/
+│
+├── 📓 Research_Kudinov_ruslan.ipynb   ← ВСЕ ЭКСПЕРИМЕНТЫ ЗДЕСЬ
+│
+├── 📄 paper.tex                       ← LaTeX статья
+├── 📄 references.bib                  ← Список литературы
+├── 📄 paper.pdf                       ← Скомпилированная статья
+│
+└── 📁 results_combined_corruptions/   ← Генерируется автоматически
+    ├── 📄 raw_results.json            ← Все числа
+    ├── 📄 summary_table.tex           ← Таблица для LaTeX
+    ├── 📄 ablation_order.csv          ← Абляция порядка
+    ├── 🖼️ corruption_examples.png
+    ├── 🖼️ heatmap_ViT-*_s{1,3,5}.png  (9 файлов)
+    ├── 🖼️ severity_curves_ViT-*.png   (3 файла)
+    ├── 🖼️ superadditivity_ViT-*.png   (3 файла)
+    ├── 🖼️ cross_model_superadditivity.png
+    └── 🖼️ radar_robustness.png
 ```
 
-> ⚠️ Takes ~2 hours on GPU. Results saved to `results_combined_corruptions/`
+---
 
-### 4. Regenerate plots only (fast!)
+## 🔬 Методология
 
-```bash
-python regenerate_plots.py   # reads raw_results.json, no GPU needed
+### Модели (OpenCLIP, LAION-2B)
+
+| Модель | Patch Size | Параметры |
+|--------|:---:|:---:|
+| ViT-B/32 | 32×32 | 88M |
+| ViT-B/16 | 16×16 | 86M |
+| ViT-L/14 | 14×14 | 307M |
+
+### Коррупции
+
+| Категория | Типы |
+|-----------|------|
+| 🔴 Noise | `gaussian_noise`, `shot_noise` |
+| 🟠 Blur | `motion_blur` |
+| 🟡 Weather | `fog` |
+| 🟢 Digital | `jpeg_compression`, `brightness`, `contrast` |
+
+**21 пара** из $\binom{7}{2}$ комбинаций × **3 severity** × **3 модели** = **765 evaluations**
+
+### Метрика Interaction Effect
+
+$$\mathcal{I}(c_1, c_2, s) = \Delta(c_1{+}c_2,\, s) - [\Delta(c_1, s) + \Delta(c_2, s)]$$
+
+```
+I > +0.005  →  SUPERADDITIVE  🔴
+|I| ≤ 0.005 →  ADDITIVE       ⚪
+I < -0.005  →  SUBADDITIVE    🔵
 ```
 
-### 5. Compile the paper
+---
+
+## 📄 Paper
+
+Статья написана в LaTeX, компилируется через MiKTeX:
 
 ```bash
 pdflatex paper
@@ -203,121 +271,36 @@ pdflatex paper
 
 ---
 
-## 📁 Project Structure
+## ⚙️ Железо и время
 
-```
-📦 RealResearch/
-├── 📄 experiment.py               # Main experiment (CLIP evaluation)
-├── 📄 regenerate_plots.py         # Regenerate all figures
-├── 📄 ablation_order.py           # Order sensitivity ablation
-├── 📄 paper.tex                   # LaTeX paper
-├── 📄 references.bib              # BibTeX references
-│
-└── 📁 results_combined_corruptions/
-    ├── 📄 raw_results.json        # All accuracy numbers
-    ├── 📄 summary_table.csv       # Summary table
-    ├── 📄 summary_table.tex       # LaTeX table
-    ├── 📄 ablation_order.csv      # Order sensitivity results
-    ├── 📄 ablation_order.tex      # LaTeX ablation table
-    │
-    ├── 🖼️ corruption_examples.png
-    ├── 🖼️ heatmap_ViT-B-32_s{1,3,5}.png
-    ├── 🖼️ heatmap_ViT-B-16_s{1,3,5}.png
-    ├── 🖼️ heatmap_ViT-L-14_s{1,3,5}.png
-    ├── 🖼️ severity_curves_ViT-B-32.png
-    ├── 🖼️ severity_curves_ViT-B-16.png
-    ├── 🖼️ severity_curves_ViT-L-14.png
-    ├── 🖼️ superadditivity_ViT-B-32.png
-    ├── 🖼️ superadditivity_ViT-B-16.png
-    ├── 🖼️ superadditivity_ViT-L-14.png
-    ├── 🖼️ cross_model_superadditivity.png
-    └── 🖼️ radar_robustness.png
-```
+| Этап | Время |
+|------|:-----:|
+| Полный эксперимент (3 модели) | ~111 мин 🕐 |
+| Перегенерация графиков | ~2 мин ⚡ |
+| Абляция (order sensitivity) | ~5 мин |
+| Компиляция статьи | ~30 сек |
 
 ---
 
-## 🔬 Methodology
+## 🔑 Что нового по сравнению с существующими работами
 
-### Models
+| Работа | Что делали | Наше отличие |
+|--------|-----------|--------------|
+| ImageNet-C (2019) | Одиночные коррупции | **Попарные комбинации** |
+| RobustBench (2021) | Лидерборд одиночных | **Interaction effects** |
+| CCC / RDumb (2023) | Пары для TTA на CNN | **VLM, zero-shot** |
+| BAT-CLIP (2024) | Одиночные на CLIP | **Комбинированные** |
+| Holistic CLIP (2024) | 3D коррупции на CLIP | **Порядок + суперадд.** |
 
-| Model | Patch Size | Params | Pretrained on |
-|-------|:---:|:---:|:---:|
-| ViT-B/32 | 32×32 | 88M | LAION-2B |
-| ViT-B/16 | 16×16 | 86M | LAION-2B |
-| ViT-L/14 | 14×14 | 307M | LAION-2B |
-
-### Corruption Types
-
-| Category | Corruptions |
-|----------|-------------|
-| 🔴 Noise | `gaussian_noise`, `shot_noise` |
-| 🟠 Blur | `motion_blur` |
-| 🟡 Weather | `fog` |
-| 🟢 Digital | `jpeg_compression`, `brightness`, `contrast` |
-
-### Interaction Effect Metric
-
-$$\mathcal{I}(c_1, c_2, s) = \Delta(c_1{+}c_2, s) - [\Delta(c_1, s) + \Delta(c_2, s)]$$
-
-```
-I > +0.005  →  SUPERADDITIVE  🔴  (worse than expected)
-|I| ≤ 0.005 →  ADDITIVE       ⚪  (as expected)
-I < -0.005  →  SUBADDITIVE    🔵  (better than expected)
-```
-
-### Experimental Scale
-
-```
-3 models × (1 clean + 21 single + 63 combined) × 3 severities
-= 3 × 85 × 3 = 765 evaluations
-= 765 × 1000 images = 765,000 forward passes
-```
-
----
-
-## 📄 Paper
-
-```bibtex
-@article{anonymous2025corruptions,
-  title   = {When Corruptions Compound: Superadditive Degradation
-             of Vision-Language Encoders under Combined Image Corruptions},
-  author  = {Anonymous},
-  journal = {arXiv preprint},
-  year    = {2025}
-}
-```
-
----
-
-## 🔑 Related Work
-
-| Work | What they did | Our difference |
-|------|--------------|----------------|
-| ImageNet-C (2019) | Single corruptions, 15 types | **Pairwise combinations** |
-| RobustBench (2021) | Leaderboard for single corruptions | **Interaction effects** |
-| CCC / RDumb (2023) | Corruption pairs for TTA CNNs | **VLMs, zero-shot, superadditivity** |
-| BAT-CLIP (2024) | Single corruptions on CLIP | **Combined corruptions** |
-| Holistic CLIP (2024) | 3D corruptions on CLIP | **Pairwise + order sensitivity** |
-
-> ✅ **No prior work** has systematically quantified pairwise corruption
-> interaction effects for VLM encoders in zero-shot classification.
-
----
-
-## ⚙️ Hardware & Runtime
-
-| Stage | Time | Hardware |
-|-------|:----:|:--------:|
-| Full experiment (3 models) | ~111 min | NVIDIA GPU |
-| Regenerate all plots | ~2 min | CPU only |
-| Ablation study | ~5 min | NVIDIA GPU |
-| Compile paper | ~30 sec | CPU |
+> ✅ Никто до нас не изучал попарные interaction effects
+> для VLM энкодеров в zero-shot классификации.
 
 ---
 
 <div align="center">
 
+**Kudinov Ruslan** • 2025
+
 Made with 🔥 and way too much ☕
 
 </div>
-
